@@ -9,4 +9,8 @@ add_executable(Sounds main.cpp
         AudioBuffer.cpp
         AudioBuffer.h
         WavWriter.cpp
-        WavWriter.h)
+        WavWriter.h
+        miniaudio.h
+        miniaudio.cpp
+        AudioPlayer.cpp
+        AudioPlayer.h)
