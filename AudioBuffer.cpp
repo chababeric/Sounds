@@ -6,21 +6,26 @@
 #include <vector>
 #include <utility>
 
-AudioBuffer::AudioBuffer(std::vector<float> samples, float sampleRate, int channelCount)
-    : samples(std::move(samples)), sampleRate(sampleRate), channelCount(channelCount) {}
+
+AudioBuffer::AudioBuffer(uint32_t sampleRate, uint16_t channelCount, std::vector<float> samples)
+    : sampleRate(sampleRate), channelCount(channelCount), samples(std::move(samples)) {}
 
 void AudioBuffer::addSample(float sample) {
     samples.push_back(sample);
 }
 
-int AudioBuffer::getChannelCount() const {
+uint16_t AudioBuffer::getChannelCount() const {
     return channelCount;
 }
 
 float AudioBuffer::getDuration() const {
-    return static_cast<float>(samples.size()) / sampleRate;
+    return static_cast<float>(samples.size()) / (static_cast<float>(sampleRate) * static_cast<float>(channelCount));
 }
 
 const std::vector<float>& AudioBuffer::getSamples() const {
     return samples;
+}
+
+uint32_t AudioBuffer::getSampleRate() const {
+    return sampleRate;
 }
