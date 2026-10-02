@@ -7,4 +7,6 @@ add_executable(Sounds main.cpp
         Oscillator.cpp
         Oscillator.h
         AudioBuffer.cpp
-        AudioBuffer.h)
+        AudioBuffer.h
+        WavWriter.cpp
+        WavWriter.h)

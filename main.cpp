@@ -1,6 +1,9 @@
 #include <iostream>
+#include <cstdint>
 
 #include "Oscillator.h"
+#include "AudioBuffer.h"
+#include "WavWriter.h"
 
 int main() {
     auto osc = Oscillator(0.5f, 440.0f, 44100.0f);
