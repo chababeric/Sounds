@@ -3,7 +3,6 @@
 //
 
 #include "WavWriter.h"
-#include <iostream>
 #include <fstream>
 #include <algorithm>
 #include <limits>
@@ -23,11 +22,6 @@ bool WavWriter::writeWav(const AudioBuffer& buffer, const std::string& fileName)
 
     for (float sample : buffer.getSamples()) {
         writeInt16(file, floatToPcm16(sample));
-    }
-
-    // Check the stream
-    if (!file) {
-        return false;
     }
 
     // Close first so any buffered data is written to disk, then check for errors
