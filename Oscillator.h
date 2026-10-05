@@ -6,10 +6,11 @@
 #define SOUNDS_OSCILLATOR_H
 
 #include <cstdint>
+#include "Waveform.h"
 
 class Oscillator {
 public:
-    Oscillator(float amplitude, float frequency, uint32_t sampleRate);
+    Oscillator(float amplitude, float frequency, uint32_t sampleRate, Waveform waveform = Waveform::Sine);
 
     float getNextSample();
 
@@ -29,6 +30,9 @@ private:
     // Where we are inside the current cycle of the wave, in radians.
     // Goes from 0 to 2π, then wraps back to 0 for the next cycle.
     float phase = 0.0f;
+
+    // Shape of the wave: sine, square, saw or triangle
+    Waveform waveform;
 };
 
 

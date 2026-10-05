@@ -13,4 +13,5 @@ add_executable(Sounds main.cpp
         miniaudio.h
         miniaudio.cpp
         AudioPlayer.cpp
-        AudioPlayer.h)
+        AudioPlayer.h
+        Waveform.h)

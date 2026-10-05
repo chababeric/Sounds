@@ -11,11 +11,27 @@ namespace {
     constexpr float twoPi = 2.0f * std::numbers::pi_v<float>;
 }
 
-Oscillator::Oscillator(float amplitude, float frequency, uint32_t sampleRate)
-    : amplitude(amplitude), frequency(frequency), sampleRate(sampleRate) {}
+Oscillator::Oscillator(float amplitude, float frequency, uint32_t sampleRate, Waveform waveform)
+    : amplitude(amplitude), frequency(frequency), sampleRate(sampleRate), waveform(waveform) {}
 
 float Oscillator::getNextSample() {
-    const float sample = amplitude * std::sin(phase);
+    const float x = phase / twoPi;
+    float value = 0.0f;
+
+    switch (waveform) {
+        case Waveform::Sine:
+            value = std::sin(phase);
+            break;
+        case Waveform::Square:
+            value = (x < 0.5f) ? 1.0f : -1.0f;
+            break;
+        case Waveform::Saw:
+            value = (2.0f * x) - 1.0f;
+            break;
+        case Waveform::Triangle:
+            value = 1.0f - (4.0f * std::abs(x - 0.5f));
+            break;
+    }
 
     // Advance by one sample's worth of the cycle
     phase += twoPi * frequency / static_cast<float>(sampleRate);
@@ -25,5 +41,5 @@ float Oscillator::getNextSample() {
         phase -= twoPi;
     }
 
-    return sample;
+    return value * amplitude;
 }
