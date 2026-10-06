@@ -1,11 +1,75 @@
 #include <iostream>
 #include <cstdint>
+#include <string>
+#include <optional>
 
 #include "Oscillator.h"
-#include "AudioBuffer.h"
-#include "WavWriter.h"
 #include "AudioPlayer.h"
 #include "Waveform.h"
+
+// Turns a name typed by the user into a Waveform.
+// Returns std::nullopt if the name doesn't match any waveform.
+std::optional<Waveform> parseWaveform(const std::string& name) {
+    if (name == "sine") {
+        return Waveform::Sine;
+    }
+    if (name == "square") {
+        return Waveform::Square;
+    }
+    if (name == "saw") {
+        return Waveform::Saw;
+    }
+    if (name == "triangle") {
+        return Waveform::Triangle;
+    }
+    return std::nullopt; // No match
+}
+
+// Turns a Waveform back into a name, for display.
+std::string waveformName(Waveform waveform) {
+    switch (waveform) {
+        case Waveform::Sine:     return "sine";
+        case Waveform::Square:   return "square";
+        case Waveform::Saw:      return "saw";
+        case Waveform::Triangle: return "triangle";
+    }
+    return "unknown";
+}
+
+// Throws away everything left on the current input line,
+// so a bad command doesn't leak into the next one.
+void discardRestOfLine() {
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
+// Reads a number for a command. Returns std::nullopt if the user typed something else.
+std::optional<float> readNumber() {
+    float value = 0.0f;
+    if (std::cin >> value) {
+        return value;
+    }
+
+    // The read failed (e.g. "f hello"): reset the error state and skip the bad input
+    std::cin.clear();
+    discardRestOfLine();
+    return std::nullopt;
+}
+
+void printHelp() {
+    std::cout << "\nCommands:\n"
+              << "  f <hz>      Set frequency (20 to 22050), e.g. f 880\n"
+              << "  a <0-1>     Set amplitude (0.0 to 1.0), e.g. a 0.3\n"
+              << "  w <name>    Set waveform: sine, square, saw, triangle\n"
+              << "  s           Show current settings\n"
+              << "  h           Show this help\n"
+              << "  q           Quit\n\n";
+}
+
+void printStatus(Oscillator& oscillator) {
+    std::cout << "Now playing: " << waveformName(oscillator.getWaveform())
+              << ", " << oscillator.getFrequency() << " Hz"
+              << ", amplitude " << oscillator.getAmplitude() << '\n';
+}
 
 int main() {
     constexpr uint32_t SAMPLE_RATE = 44100;
@@ -16,41 +80,64 @@ int main() {
     try {
         Oscillator oscillator(AMPLITUDE, FREQUENCY, SAMPLE_RATE, Waveform::Triangle);
         AudioPlayer player(oscillator, SAMPLE_RATE, CHANNEL_COUNT);
-
         player.start();
-        std::cout << "Playing a " << FREQUENCY <<"Hz tone. Press Enter to stop...\n";
-        std::cin.get();
-        player.stop();
+
+        std::cout << "=== Tone Generator ===\n";
+        printStatus(oscillator);
+        printHelp();
+
+        std::string command;
+        while (std::cout << "> " && std::cin >> command) {
+            if (command == "q") {
+                break;
+            }
+
+            if (command == "f") {
+                const auto frequency = readNumber();
+                if (!frequency) {
+                    std::cout << "Please type a number, e.g. f 880\n";
+                    continue;
+                }
+                oscillator.setFrequency(*frequency);
+                printStatus(oscillator);
+            }
+            else if (command == "a") {
+                const auto amplitude = readNumber();
+                if (!amplitude) {
+                    std::cout << "Please type a number, e.g. a 0.3\n";
+                    continue;
+                }
+                oscillator.setAmplitude(*amplitude);
+                printStatus(oscillator);
+            }
+            else if (command == "w") {
+                std::string name;
+                std::cin >> name;
+                const auto waveform = parseWaveform(name);
+                if (!waveform) {
+                    std::cout << "Unknown waveform '" << name << "'. Use: sine, square, saw, triangle\n";
+                    continue;
+                }
+                oscillator.setWaveform(*waveform);
+                printStatus(oscillator);
+            }
+            else if (command == "s") {
+                printStatus(oscillator);
+            }
+            else if (command == "h") {
+                printHelp();
+            }
+            else {
+                std::cout << "Unknown command '" << command << "'. Type h for help.\n";
+                discardRestOfLine();
+            }
+        }
+
+        std::cout << "Bye!\n";
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << '\n';
         return 1;
     }
 
     return 0;
-}
-
-static void generateWavFile() {
-    // --- Settings for the tone ---
-    constexpr uint32_t SAMPLE_RATE = 44100;    // CD quality
-    constexpr uint16_t CHANNEL_COUNT = 1;      // Mono
-    constexpr float DURATION_SECONDS = 2.0f;   // 2 seconds
-    constexpr float FREQUENCY = 440.0f;        // The note A
-    constexpr float AMPLITUDE = 0.5f;          // Half volume
-
-    AudioBuffer buffer(SAMPLE_RATE, CHANNEL_COUNT);
-    Oscillator oscillator(AMPLITUDE, FREQUENCY, buffer.getSampleRate());
-
-    // Number of frames = seconds x frames per second (88 200 for 2 seconds)
-    const auto frameCount = static_cast<uint32_t>(DURATION_SECONDS * SAMPLE_RATE);
-
-    // Mono: one sample per frame
-    for (uint32_t i = 0; i < frameCount; ++i) {
-        buffer.addSample(oscillator.getNextSample());
-    }
-
-    if (!WavWriter::writeWav(buffer, "tone.wav")) {
-        std::cerr << "Error: could not write tone.wav\n";
-    }
-
-    std::cout << "Wrote tone.wav (" << buffer.getDuration() << " seconds)\n";
 }

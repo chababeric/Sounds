@@ -6,6 +6,7 @@
 #define SOUNDS_OSCILLATOR_H
 
 #include <cstdint>
+#include <atomic>
 #include "Waveform.h"
 
 class Oscillator {
@@ -13,15 +14,21 @@ public:
     Oscillator(float amplitude, float frequency, uint32_t sampleRate, Waveform waveform = Waveform::Sine);
 
     float getNextSample();
+    void setAmplitude(float amplitude);
+    void setFrequency(float frequency);
+    void setWaveform(Waveform waveform);
+    float getAmplitude();
+    float getFrequency();
+    Waveform getWaveform();
 
 private:
     // Volume of the wave, from 0.0 (silent) to 1.0 (maximum).
     // The wave swings between -amplitude and +amplitude.
-    float amplitude;
+    std::atomic<float> amplitude;
 
     // Pitch of the tone, in Hz (cycles per second).
     // 440 Hz = the note A. Higher number = higher pitch.
-    float frequency;
+    std::atomic<float> frequency;
 
     // How many samples are produced per second (e.g. 44,100).
     // Must match the AudioBuffer the samples go into.
@@ -32,7 +39,7 @@ private:
     float phase = 0.0f;
 
     // Shape of the wave: sine, square, saw or triangle
-    Waveform waveform;
+    std::atomic<Waveform> waveform;
 };
 
 
