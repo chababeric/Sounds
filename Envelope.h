@@ -7,6 +7,15 @@
 
 #include <cstdint>
 
+// Settings for an ADSR envelope.
+// Every field has a default, so you only need to set the ones you want to change.
+struct EnvelopeSettings {
+    float attackTime = 0.01f;   // Seconds to rise from 0 to full volume
+    float decayTime = 0.1f;     // Seconds to fall from full volume to the sustain level
+    float sustainLevel = 0.8f;  // Volume while the note is held, from 0.0 to 1.0 (a level, not a time)
+    float releaseTime = 0.3f;   // Seconds to fade to silence after the note is released
+};
+
 // Shapes the volume of a note over time (ADSR: Attack, Decay, Sustain, Release).
 // Produces one level per sample, from 0.0 (silent) to 1.0 (full volume),
 // which is multiplied with the oscillator's output.

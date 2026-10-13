@@ -16,4 +16,6 @@ add_executable(Sounds main.cpp
         AudioPlayer.h
         Waveform.h
         Envelope.cpp
-        Envelope.h)
+        Envelope.h
+        Voice.cpp
+        Voice.h)

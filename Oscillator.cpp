@@ -67,14 +67,14 @@ void Oscillator::setWaveform(Waveform waveform) {
     this->waveform.store(waveform);
 }
 
-float Oscillator::getAmplitude() {
+float Oscillator::getAmplitude() const {
     return this->amplitude.load();
 }
 
-float Oscillator::getFrequency() {
+float Oscillator::getFrequency() const {
     return this->frequency.load();
 }
 
-Waveform Oscillator::getWaveform() {
+Waveform Oscillator::getWaveform() const {
     return this->waveform.load();
 }

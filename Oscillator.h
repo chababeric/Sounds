@@ -17,9 +17,9 @@ public:
     void setAmplitude(float amplitude);
     void setFrequency(float frequency);
     void setWaveform(Waveform waveform);
-    float getAmplitude();
-    float getFrequency();
-    Waveform getWaveform();
+    float getAmplitude() const;
+    float getFrequency() const;
+    Waveform getWaveform() const;
 
 private:
     // Volume of the wave, from 0.0 (silent) to 1.0 (maximum).

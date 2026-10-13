@@ -3,9 +3,12 @@
 #include <string>
 #include <optional>
 
+#include "AudioBuffer.h"
 #include "Oscillator.h"
 #include "AudioPlayer.h"
 #include "Waveform.h"
+#include "Envelope.h"
+#include "WavWriter.h"
 
 // Turns a name typed by the user into a Waveform.
 // Returns std::nullopt if the name doesn't match any waveform.
@@ -71,73 +74,100 @@ void printStatus(Oscillator& oscillator) {
               << ", amplitude " << oscillator.getAmplitude() << '\n';
 }
 
+// void renderSeconds(Oscillator osc, Envelope env, AudioBuffer& buffer, float seconds) {
+//     buffer.addSample(osc.getNextSample() * env.getNextLevel());
+// }
+
 int main() {
     constexpr uint32_t SAMPLE_RATE = 44100;
-    constexpr uint16_t CHANNEL_COUNT = 2;       // Stereo: same tone in both speakers
+    constexpr uint16_t CHANNEL_COUNT = 1;
     constexpr float FREQUENCY = 440.0f;         // The note A
-    constexpr float AMPLITUDE = 0.2f;           // Quieter than the file: speakers can be loud
+    constexpr float AMPLITUDE = 1.0f;
+    constexpr float ATTACK_TIME = 0.1f;
+    constexpr float DECAY_TIME = 0.2f;
+    constexpr float SUSTAIN_LEVEL = 0.7f;
+    constexpr float RELEASE_TIME = 0.5f;
 
-    try {
-        Oscillator oscillator(AMPLITUDE, FREQUENCY, SAMPLE_RATE, Waveform::Triangle);
-        AudioPlayer player(oscillator, SAMPLE_RATE, CHANNEL_COUNT);
-        player.start();
+    Oscillator oscillator(AMPLITUDE, FREQUENCY, SAMPLE_RATE, Waveform::Sine);
+    Envelope envelope(ATTACK_TIME, DECAY_TIME, SUSTAIN_LEVEL, RELEASE_TIME, SAMPLE_RATE);
+    AudioBuffer audioBuffer(SAMPLE_RATE, CHANNEL_COUNT);
 
-        std::cout << "=== Tone Generator ===\n";
-        printStatus(oscillator);
-        printHelp();
-
-        std::string command;
-        while (std::cout << "> " && std::cin >> command) {
-            if (command == "q") {
-                break;
-            }
-
-            if (command == "f") {
-                const auto frequency = readNumber();
-                if (!frequency) {
-                    std::cout << "Please type a number, e.g. f 880\n";
-                    continue;
-                }
-                oscillator.setFrequency(*frequency);
-                printStatus(oscillator);
-            }
-            else if (command == "a") {
-                const auto amplitude = readNumber();
-                if (!amplitude) {
-                    std::cout << "Please type a number, e.g. a 0.3\n";
-                    continue;
-                }
-                oscillator.setAmplitude(*amplitude);
-                printStatus(oscillator);
-            }
-            else if (command == "w") {
-                std::string name;
-                std::cin >> name;
-                const auto waveform = parseWaveform(name);
-                if (!waveform) {
-                    std::cout << "Unknown waveform '" << name << "'. Use: sine, square, saw, triangle\n";
-                    continue;
-                }
-                oscillator.setWaveform(*waveform);
-                printStatus(oscillator);
-            }
-            else if (command == "s") {
-                printStatus(oscillator);
-            }
-            else if (command == "h") {
-                printHelp();
-            }
-            else {
-                std::cout << "Unknown command '" << command << "'. Type h for help.\n";
-                discardRestOfLine();
-            }
-        }
-
-        std::cout << "Bye!\n";
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << '\n';
-        return 1;
+    envelope.noteOn();
+    for (uint32_t i = 0; i < SAMPLE_RATE; i++) {
+        audioBuffer.addSample(oscillator.getNextSample() * envelope.getNextLevel());
     }
+    envelope.noteOff();
+    for (uint32_t i = 0; i < SAMPLE_RATE; i++) {
+        audioBuffer.addSample(oscillator.getNextSample() * envelope.getNextLevel());
+    }
+    WavWriter::writeWav(audioBuffer, "envelope.wav");
+
+    // constexpr uint32_t SAMPLE_RATE = 44100;
+    // constexpr uint16_t CHANNEL_COUNT = 2;       // Stereo: same tone in both speakers
+    // constexpr float FREQUENCY = 440.0f;         // The note A
+    // constexpr float AMPLITUDE = 0.2f;           // Quieter than the file: speakers can be loud
+    //
+    // try {
+    //     Oscillator oscillator(AMPLITUDE, FREQUENCY, SAMPLE_RATE, Waveform::Triangle);
+    //     AudioPlayer player(oscillator, SAMPLE_RATE, CHANNEL_COUNT);
+    //     player.start();
+    //
+    //     std::cout << "=== Tone Generator ===\n";
+    //     printStatus(oscillator);
+    //     printHelp();
+    //
+    //     std::string command;
+    //     while (std::cout << "> " && std::cin >> command) {
+    //         if (command == "q") {
+    //             break;
+    //         }
+    //
+    //         if (command == "f") {
+    //             const auto frequency = readNumber();
+    //             if (!frequency) {
+    //                 std::cout << "Please type a number, e.g. f 880\n";
+    //                 continue;
+    //             }
+    //             oscillator.setFrequency(*frequency);
+    //             printStatus(oscillator);
+    //         }
+    //         else if (command == "a") {
+    //             const auto amplitude = readNumber();
+    //             if (!amplitude) {
+    //                 std::cout << "Please type a number, e.g. a 0.3\n";
+    //                 continue;
+    //             }
+    //             oscillator.setAmplitude(*amplitude);
+    //             printStatus(oscillator);
+    //         }
+    //         else if (command == "w") {
+    //             std::string name;
+    //             std::cin >> name;
+    //             const auto waveform = parseWaveform(name);
+    //             if (!waveform) {
+    //                 std::cout << "Unknown waveform '" << name << "'. Use: sine, square, saw, triangle\n";
+    //                 continue;
+    //             }
+    //             oscillator.setWaveform(*waveform);
+    //             printStatus(oscillator);
+    //         }
+    //         else if (command == "s") {
+    //             printStatus(oscillator);
+    //         }
+    //         else if (command == "h") {
+    //             printHelp();
+    //         }
+    //         else {
+    //             std::cout << "Unknown command '" << command << "'. Type h for help.\n";
+    //             discardRestOfLine();
+    //         }
+    //     }
+    //
+    //     std::cout << "Bye!\n";
+    // } catch (const std::exception& e) {
+    //     std::cerr << "Error: " << e.what() << '\n';
+    //     return 1;
+    // }
 
     return 0;
 }
