@@ -14,9 +14,12 @@
 // Call getNextSample() once per sample to get the final output.
 class Voice {
 public:
+    // Value of getNote() when no key is holding this voice.
+    static constexpr int NO_NOTE = -1;
+
     // Creates a silent voice (no note playing) with a default sound: 440 Hz sine wave.
     // Use the setters to change the sound, and noteOn() to start playing.
-    Voice(uint32_t sampleRate, const EnvelopeSettings& settings = {});
+    explicit Voice(uint32_t sampleRate, const EnvelopeSettings& settings = {});
 
     // Produces the next sample: oscillator output x envelope level.
     // Must be called exactly once per sample.
@@ -24,11 +27,18 @@ public:
 
     // --- Notes ---
 
-    // Starts the note (key pressed): the envelope begins its attack.
-    void noteOn();
+    // Starts playing a MIDI note (0 to 127): sets the pitch and starts the envelope.
+    void noteOn(int note);
 
     // Ends the note (key released): the envelope begins its release.
     void noteOff();
+
+    // The note whose key is currently held, or NO_NOTE if none.
+    int getNote() const;
+
+    // True while the voice is making sound (or about to), including during the release.
+    // A voice that isn't active is free for a new note.
+    bool isActive() const;
 
     // --- Sound settings (passed to the oscillator) ---
 
@@ -61,6 +71,9 @@ public:
     void setReleaseTime(float releaseTime);
 
 private:
+    // The MIDI note being held on this voice, or NO_NOTE.
+    int note = NO_NOTE;
+
     // Generates the raw waveform.
     Oscillator oscillator;
 

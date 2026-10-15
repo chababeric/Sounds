@@ -5,8 +5,8 @@
 #include "AudioPlayer.h"
 #include <stdexcept>
 
-AudioPlayer::AudioPlayer(Voice& voice, uint32_t sampleRate, uint16_t channelCount)
-    : voice(voice) {
+AudioPlayer::AudioPlayer(Synth& synth, uint32_t sampleRate, uint16_t channelCount)
+    : synth(synth) {
     ma_device_config config = ma_device_config_init(ma_device_type_playback);
     config.playback.format = ma_format_f32;      // 32-bit floats, same as our oscillator
     config.playback.channels = channelCount;
@@ -43,7 +43,7 @@ void AudioPlayer::fillBuffer(float* output, ma_uint32 frameCount) {
     const ma_uint32 channelCount = device.playback.channels;
 
     for (ma_uint32 frame = 0; frame < frameCount; ++frame) {
-        const float sample = voice.getNextSample();
+        const float sample = synth.getNextSample();
 
         // Same sample on every channel (interleaved: left, right, left, right...)
         for (ma_uint32 channel = 0; channel < channelCount; ++channel) {

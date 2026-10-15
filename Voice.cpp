@@ -3,6 +3,7 @@
 //
 
 #include "Voice.h"
+#include "Note.h"
 
 namespace {
     constexpr float DEFAULT_AMPLITUDE = 0.5f;
@@ -17,12 +18,23 @@ float Voice::getNextSample() {
     return oscillator.getNextSample() * envelope.getNextLevel();
 }
 
-void Voice::noteOn() {
+void Voice::noteOn(int note) {
+    this->note = note;
+    oscillator.setFrequency(noteToFrequency(note));
     envelope.noteOn();
 }
 
 void Voice::noteOff() {
+    this->note = NO_NOTE;
     envelope.noteOff();
+}
+
+int Voice::getNote() const {
+    return note;
+}
+
+bool Voice::isActive() const {
+    return !envelope.isIdle();
 }
 
 void Voice::setFrequency(float frequency) {

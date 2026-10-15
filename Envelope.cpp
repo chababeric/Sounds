@@ -106,6 +106,10 @@ float Envelope::getNextLevel() {
     return currentLevel;
 }
 
+bool Envelope::isIdle() const {
+    return currentStage.load() == Stage::Idle && !noteRequested.load();
+}
+
 void Envelope::setAttackTime(float attackTime) {
     this->attackTime = std::clamp(attackTime, 0.0f, MAX_STAGE_TIME);
 }

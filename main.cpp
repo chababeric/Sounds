@@ -1,12 +1,12 @@
-#include <iostream>
 #include <cstdint>
-#include <string>
+#include <iostream>
+#include <limits>
 #include <optional>
+#include <string>
 
 #include "AudioPlayer.h"
+#include "Synth.h"
 #include "Waveform.h"
-#include "Voice.h"
-#include "Note.h"
 
 // Turns a name typed by the user into a Waveform.
 // Returns std::nullopt if the name doesn't match any waveform.
@@ -43,26 +43,14 @@ void discardRestOfLine() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
-// Reads a number for a command. Returns std::nullopt if the user typed something else.
-std::optional<float> readNumber() {
-    float value = 0.0f;
-    if (std::cin >> value) {
-        return value;
-    }
-
-    // The read failed (e.g. "f hello"): reset the error state and skip the bad input
-    std::cin.clear();
-    discardRestOfLine();
-    return std::nullopt;
-}
-
+// Reads a whole number for a command. Returns std::nullopt if the user typed something else.
 std::optional<int> readInt() {
     int value = 0;
     if (std::cin >> value) {
         return value;
     }
 
-    // The read failed (e.g. "p hello"): reset the error state and skip the bad input
+    // The read failed (e.g. "on hello"): reset the error state and skip the bad input
     std::cin.clear();
     discardRestOfLine();
     return std::nullopt;
@@ -70,34 +58,32 @@ std::optional<int> readInt() {
 
 void printHelp() {
     std::cout << "\nCommands:\n"
-              << "  n           Note On\n"
-              << "  o           Note Off\n"
-              << "  f <hz>      Set frequency (20 to 22050), e.g. f 880\n"
-              << "  a <0-1>     Set amplitude (0.0 to 1.0), e.g. a 0.3\n"
-              << "  w <name>    Set waveform: sine, square, saw, triangle\n"
-              << "  p <0-127>   Play a note (0 to 127) e.g. p 69\n"
+              << "  on <0-127>  Start a note, e.g. on 60 (middle C)\n"
+              << "  off <0-127> Release a note, e.g. off 60\n"
+              << "  w <name>    Set waveform for all voices: sine, square, saw, triangle\n"
               << "  s           Show current settings\n"
               << "  h           Show this help\n"
-              << "  q           Quit\n\n";
+              << "  q           Quit\n\n"
+              << "Try a chord: on 60, on 64, on 67\n\n";
 }
 
-void printStatus(const Voice& voice) {
-    std::cout << "Now playing: " << waveformName(voice.getWaveform())
-              << ", " << voice.getFrequency() << " Hz"
-              << ", amplitude " << voice.getAmplitude() << '\n';
+void printStatus(const Synth& synth) {
+    std::cout << "Waveform: " << waveformName(synth.getWaveform())
+              << ", voices playing: " << synth.getActiveVoiceCount()
+              << " of " << Synth::MAX_VOICES << '\n';
 }
 
 int main() {
     constexpr uint32_t SAMPLE_RATE = 44100;
-    constexpr uint16_t CHANNEL_COUNT = 2;       // Stereo: same tone in both speakers
+    constexpr uint16_t CHANNEL_COUNT = 2;       // Stereo: same sound in both speakers
 
     try {
-        Voice voice(SAMPLE_RATE);
-        AudioPlayer player(voice, SAMPLE_RATE, CHANNEL_COUNT);
+        Synth synth(SAMPLE_RATE);
+        AudioPlayer player(synth, SAMPLE_RATE, CHANNEL_COUNT);
         player.start();
 
-        std::cout << "=== Tone Generator ===\n";
-        printStatus(voice);
+        std::cout << "=== Tiny Synth ===\n";
+        printStatus(synth);
         printHelp();
 
         std::string command;
@@ -106,23 +92,26 @@ int main() {
                 break;
             }
 
-            if (command == "f") {
-                const auto frequency = readNumber();
-                if (!frequency) {
-                    std::cout << "Please type a number, e.g. f 880\n";
+            if (command == "on") {
+                const auto note = readInt();
+                if (!note) {
+                    std::cout << "Please type a note number, e.g. on 60\n";
                     continue;
                 }
-                voice.setFrequency(*frequency);
-                printStatus(voice);
+                if (!synth.noteOn(*note)) {
+                    std::cout << "All " << Synth::MAX_VOICES << " voices are busy. Release a note first.\n";
+                    continue;
+                }
+                printStatus(synth);
             }
-            else if (command == "a") {
-                const auto amplitude = readNumber();
-                if (!amplitude) {
-                    std::cout << "Please type a number, e.g. a 0.3\n";
+            else if (command == "off") {
+                const auto note = readInt();
+                if (!note) {
+                    std::cout << "Please type a note number, e.g. off 60\n";
                     continue;
                 }
-                voice.setAmplitude(*amplitude);
-                printStatus(voice);
+                synth.noteOff(*note);
+                printStatus(synth);
             }
             else if (command == "w") {
                 std::string name;
@@ -132,27 +121,11 @@ int main() {
                     std::cout << "Unknown waveform '" << name << "'. Use: sine, square, saw, triangle\n";
                     continue;
                 }
-                voice.setWaveform(*waveform);
-                printStatus(voice);
-            }
-            else if (command == "n") {
-                voice.noteOn();
-            }
-            else if (command == "o") {
-                voice.noteOff();
-            }
-            else if (command == "p") {
-                const auto note = readInt();
-                if (!note) {
-                    std::cout << "Please type an integer, e.g. p 69\n";
-                    continue;
-                }
-                voice.setFrequency(noteToFrequency(*note));
-                voice.noteOn();
-                printStatus(voice);
+                synth.setWaveform(*waveform);
+                printStatus(synth);
             }
             else if (command == "s") {
-                printStatus(voice);
+                printStatus(synth);
             }
             else if (command == "h") {
                 printHelp();

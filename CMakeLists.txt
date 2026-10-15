@@ -20,4 +20,6 @@ add_executable(Sounds main.cpp
         Voice.cpp
         Voice.h
         Note.cpp
-        Note.h)
+        Note.h
+        Synth.cpp
+        Synth.h)

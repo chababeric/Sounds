@@ -6,13 +6,13 @@
 #define SOUNDS_AUDIOPLAYER_H
 #include <cstdint>
 #include "miniaudio.h"
-#include "Voice.h"
+#include "Synth.h"
 
 // Plays an Oscillator live through the default audio output.
 // The sound card calls back into this class whenever it needs more samples.
 class AudioPlayer {
 public:
-    AudioPlayer(Voice& voice, uint32_t sampleRate, uint16_t channelCount);
+    AudioPlayer(Synth& synth, uint32_t sampleRate, uint16_t channelCount);
     ~AudioPlayer();
 
     // miniaudio keeps a pointer to this object, so it must never be copied
@@ -32,7 +32,7 @@ private:
     void fillBuffer(float* output, ma_uint32 frameCount);
 
     // The sound source. A reference: the player uses it but doesn't own it.
-    Voice& voice;
+    Synth& synth;
 
     // The open audio device (miniaudio's handle to the sound card).
     ma_device device{};

@@ -42,6 +42,10 @@ public:
     // The audio thread starts the release at its next sample, from the current level.
     void noteOff();
 
+    // True when the envelope is silent and no note has been requested:
+    // the voice using it is free for a new note.
+    bool isIdle() const;
+
     // Advances the envelope by one sample and returns the level to apply.
     // Must be called exactly once per sample.
     float getNextLevel();
@@ -78,7 +82,8 @@ private:
     float currentLevel = 0.0f;
 
     // Which phase of the note we're in.
-    Stage currentStage = Stage::Idle;
+    // Written only by the audio thread; atomic because isIdle() reads it from the main thread.
+    std::atomic<Stage> currentStage{Stage::Idle};
 
     // How much currentLevel changes per sample in this stage.
     // Positive when rising, negative when falling, 0 when holding still.
