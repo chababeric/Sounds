@@ -6,6 +6,7 @@
 #define SOUNDS_ENVELOPE_H
 
 #include <cstdint>
+#include <atomic>
 
 // Settings for an ADSR envelope.
 // Every field has a default, so you only need to set the ones you want to change.
@@ -33,36 +34,45 @@ public:
     // Times are in seconds, sustainLevel is from 0.0 to 1.0.
     Envelope(float attackTime, float decayTime, float sustainLevel, float releaseTime, uint32_t sampleRate);
 
-    // Starts the note (key pressed): goes to Attack from the current level.
+    // Requests the note to start (key pressed). Safe to call from any thread.
+    // The audio thread starts the attack at its next sample, from the current level.
     void noteOn();
 
-    // Ends the note (key released): goes to Release from the current level.
+    // Requests the note to stop (key released). Safe to call from any thread.
+    // The audio thread starts the release at its next sample, from the current level.
     void noteOff();
 
     // Advances the envelope by one sample and returns the level to apply.
     // Must be called exactly once per sample.
     float getNextLevel();
 
+    // Settings. Times are in seconds (0 to 10), sustainLevel is from 0.0 to 1.0.
+    // Safe to call from any thread. Changes take effect the next time a stage starts.
     void setAttackTime(float attackTime);
     void setDecayTime(float decayTime);
     void setSustainLevel(float sustainLevel);
     void setReleaseTime(float releaseTime);
 
 private:
+    // --- Settings: written by the main thread (setters), read by the audio thread ---
+
     // How long the level takes to rise from 0 to 1.0, in seconds.
-    float attackTime;
+    std::atomic<float> attackTime;
 
     // How long the level takes to fall from 1.0 to the sustain level, in seconds.
-    float decayTime;
+    std::atomic<float> decayTime;
 
     // Level held while the note is on, from 0.0 to 1.0. (A level, not a time!)
-    float sustainLevel;
+    std::atomic<float> sustainLevel;
 
     // How long the level takes to fall to 0 after the note is released, in seconds.
-    float releaseTime;
+    std::atomic<float> releaseTime;
 
     // Samples per second (e.g. 44,100). Converts times in seconds into numbers of samples.
     uint32_t sampleRate;
+
+
+    // --- State: only ever touched by the audio thread, so no atomics needed ---
 
     // The volume right now, from 0.0 to 1.0. Changes by currentStep every sample.
     float currentLevel = 0.0f;
@@ -74,6 +84,14 @@ private:
     // Positive when rising, negative when falling, 0 when holding still.
     // Computed once when entering a stage: (target - current) / (time * sampleRate).
     float currentStep = 0.0f;
+
+    // What the main thread wants: true = note on, false = note off.
+    // Written by noteOn() / noteOff() on the main thread, read by the audio thread.
+    std::atomic<bool> noteRequested{false};
+
+    // What the audio thread last acted on. When it differs from noteRequested,
+    // the audio thread switches to Attack or Release. Audio thread only.
+    bool noteIsOn = false;
 
     // Moves to a new stage, and computes its step from the current level.
     // Looks up the target level and time for the stage from the settings above.

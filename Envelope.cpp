@@ -33,15 +33,15 @@ void Envelope::switchStage(Stage newStage) {
             return;
         case Stage::Attack:
             targetLevel = 1.0f;
-            time = attackTime;
+            time = attackTime.load();
             break;
         case Stage::Decay:
-            targetLevel = sustainLevel;
-            time = decayTime;
+            targetLevel = sustainLevel.load();
+            time = decayTime.load();
             break;
         case Stage::Release:
             targetLevel = 0.0f;
-            time = releaseTime;
+            time = releaseTime.load();
             break;
     }
 
@@ -58,14 +58,27 @@ void Envelope::switchStage(Stage newStage) {
 }
 
 void Envelope::noteOn() {
-    switchStage(Stage::Attack);
+    noteRequested.store(true);
 }
 
 void Envelope::noteOff() {
-    switchStage(Stage::Release);
+    noteRequested.store(false);
 }
 
 float Envelope::getNextLevel() {
+    const bool isNoteRequested = noteRequested.load();
+    const float currentSustainLevel = this->sustainLevel.load();
+
+    if (isNoteRequested != noteIsOn) {
+        noteIsOn = isNoteRequested;
+        if (noteIsOn) {
+            switchStage(Stage::Attack);
+        }
+        else {
+            switchStage(Stage::Release);
+        }
+    }
+
     this->currentLevel += this->currentStep;
     switch (this->currentStage) {
         case Stage::Attack:
@@ -75,8 +88,8 @@ float Envelope::getNextLevel() {
             }
             break;
         case Stage::Decay:
-            if (this->currentLevel <= this->sustainLevel) {
-                this->currentLevel = this->sustainLevel;
+            if (this->currentLevel <= currentSustainLevel) {
+                this->currentLevel = currentSustainLevel;
                 switchStage(Stage::Sustain);
             }
             break;

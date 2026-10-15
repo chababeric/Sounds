@@ -18,4 +18,6 @@ add_executable(Sounds main.cpp
         Envelope.cpp
         Envelope.h
         Voice.cpp
-        Voice.h)
+        Voice.h
+        Note.cpp
+        Note.h)
