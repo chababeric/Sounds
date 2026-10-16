@@ -98,10 +98,7 @@ int main() {
                     std::cout << "Please type a note number, e.g. on 60\n";
                     continue;
                 }
-                if (!synth.noteOn(*note)) {
-                    std::cout << "All " << Synth::MAX_VOICES << " voices are busy. Release a note first.\n";
-                    continue;
-                }
+                synth.noteOn(*note);
                 printStatus(synth);
             }
             else if (command == "off") {

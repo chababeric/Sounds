@@ -18,8 +18,9 @@ float Voice::getNextSample() {
     return oscillator.getNextSample() * envelope.getNextLevel();
 }
 
-void Voice::noteOn(int note) {
+void Voice::noteOn(int note, uint64_t startOrder) {
     this->note = note;
+    this->startOrder = startOrder;
     oscillator.setFrequency(noteToFrequency(note));
     envelope.noteOn();
 }
@@ -75,4 +76,8 @@ void Voice::setSustainLevel(float sustainLevel) {
 
 void Voice::setReleaseTime(float releaseTime) {
     envelope.setReleaseTime(releaseTime);
+}
+
+uint64_t Voice::getStartOrder() const {
+    return this->startOrder;
 }

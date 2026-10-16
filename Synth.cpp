@@ -13,14 +13,39 @@ Synth::Synth(uint32_t sampleRate) {
     }
 }
 
-bool Synth::noteOn(int note) {
+Voice* Synth::findOldestVoice(bool released) {
+    Voice* oldest = nullptr;
+
     for (auto& voice : voices) {
-        if (!voice->isActive()) {
-            voice->noteOn(note);
-            return true;
+        const bool isReleased = voice->getNote() == Voice::NO_NOTE;
+
+        if (voice->isActive() && isReleased == released) {
+            if (oldest == nullptr || voice->getStartOrder() < oldest->getStartOrder()) {
+                oldest = voice.get();
+            }
         }
     }
-    return false;   // No free voice
+
+    return oldest;
+}
+
+void Synth::noteOn(int note) {
+    for (auto& voice : voices) {
+        if (!voice->isActive()) {
+            voice->noteOn(note, ++noteCounter);
+            return;
+        }
+    }
+
+    Voice* oldestReleased = findOldestVoice(true);
+
+    if (oldestReleased != nullptr) {
+        oldestReleased->noteOn(note, ++noteCounter);
+    }
+    else {
+        Voice* oldestHeld = findOldestVoice(false);
+        oldestHeld->noteOn(note, ++noteCounter);
+    }
 }
 
 void Synth::noteOff(int note) {

@@ -22,7 +22,7 @@ public:
 
     // Starts a MIDI note (0 to 127) on a free voice.
     // Returns false if all voices are busy (the note isn't played).
-    bool noteOn(int note);
+    void noteOn(int note);
 
     // Releases the voice holding this note, if any.
     void noteOff(int note);
@@ -41,9 +41,13 @@ private:
     // Volume of the whole mix, applied after summing the voices. Keeps chords from clipping.
     std::atomic<float> masterGain{0.25f};
 
+    Voice* findOldestVoice(bool released);
+
     // The voice pool. unique_ptr because Voice can't be copied or moved (it contains atomics);
     // the vector only ever moves the pointers, and deletes the voices automatically.
     std::vector<std::unique_ptr<Voice>> voices;
+
+    uint64_t noteCounter = 0;
 };
 
 #endif //SOUNDS_SYNTH_H

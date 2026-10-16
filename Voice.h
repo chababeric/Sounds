@@ -28,7 +28,7 @@ public:
     // --- Notes ---
 
     // Starts playing a MIDI note (0 to 127): sets the pitch and starts the envelope.
-    void noteOn(int note);
+    void noteOn(int note, uint64_t startOrder);
 
     // Ends the note (key released): the envelope begins its release.
     void noteOff();
@@ -70,6 +70,8 @@ public:
     // Time to fade to silence after the note is released, in seconds.
     void setReleaseTime(float releaseTime);
 
+    uint64_t getStartOrder() const;
+
 private:
     // The MIDI note being held on this voice, or NO_NOTE.
     int note = NO_NOTE;
@@ -79,6 +81,8 @@ private:
 
     // Shapes the waveform's volume over time.
     Envelope envelope;
+
+    uint64_t startOrder = 0;
 };
 
 #endif // SOUNDS_VOICE_H
