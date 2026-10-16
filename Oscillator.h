@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <atomic>
 #include "Waveform.h"
+#include "WaveShape.h"
 
 class Oscillator {
 public:
@@ -38,7 +39,11 @@ private:
     // Goes from 0 to 2π, then wraps back to 0 for the next cycle.
     float phase = 0.0f;
 
-    // Shape of the wave: sine, square, saw or triangle
+    // The shape currently being played. Points to one of the shared shapes from
+    // WaveShape::shapeFor(), which live for the whole program, so it's always valid.
+    std::atomic<const WaveShape*> shape;
+
+    // This is only for display, shape is what is playing
     std::atomic<Waveform> waveform;
 };
 

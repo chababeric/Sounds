@@ -22,4 +22,6 @@ add_executable(Sounds main.cpp
         Note.cpp
         Note.h
         Synth.cpp
-        Synth.h)
+        Synth.h
+        WaveShape.cpp
+        WaveShape.h)

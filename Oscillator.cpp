@@ -11,6 +11,7 @@
 
 namespace {
     constexpr float twoPi = 2.0f * std::numbers::pi_v<float>;
+    constexpr float MIN_FREQUENCY = 20.0f;
 }
 
 Oscillator::Oscillator(float amplitude, float frequency, uint32_t sampleRate, Waveform waveform)
@@ -23,24 +24,10 @@ Oscillator::Oscillator(float amplitude, float frequency, uint32_t sampleRate, Wa
 float Oscillator::getNextSample() {
     const float currentAmplitude = this->amplitude.load();
     const float currentFrequency = this->frequency.load();
-    const Waveform currentWaveform = this->waveform.load();
+    const WaveShape* currentShape = this->shape.load();
     const float x = phase / twoPi;
-    float value = 0.0f;
 
-    switch (currentWaveform) {
-        case Waveform::Sine:
-            value = std::sin(phase);
-            break;
-        case Waveform::Square:
-            value = (x < 0.5f) ? 1.0f : -1.0f;
-            break;
-        case Waveform::Saw:
-            value = (2.0f * x) - 1.0f;
-            break;
-        case Waveform::Triangle:
-            value = 1.0f - (4.0f * std::abs(x - 0.5f));
-            break;
-    }
+    const float value = currentShape->valueAt(x);
 
     // Advance by one sample's worth of the cycle
     phase += twoPi * currentFrequency / static_cast<float>(sampleRate);
@@ -59,12 +46,12 @@ void Oscillator::setAmplitude(float amplitude) {
 }
 
 void Oscillator::setFrequency(float frequency) {
-    const float clampFrequency = std::clamp(frequency, 0.0f, static_cast<float>(this->sampleRate)  / 2.0f);
+    const float clampFrequency = std::clamp(frequency, MIN_FREQUENCY, static_cast<float>(this->sampleRate)  / 2.0f);
     this->frequency.store(clampFrequency);
 }
 
 void Oscillator::setWaveform(Waveform waveform) {
-    this->waveform.store(waveform);
+    shape.store(&WaveShape::shapeFor(waveform));
 }
 
 float Oscillator::getAmplitude() const {
