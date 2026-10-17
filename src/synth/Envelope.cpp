@@ -2,8 +2,8 @@
 // Created by Eric El-Chabab on 2026-10-08.
 //
 
-#include "Envelope.h"
 #include <algorithm>
+#include "synth/Envelope.h"
 
 namespace {
     // Longest time allowed for attack, decay and release, in seconds

@@ -23,3 +23,7 @@ float Distortion::process(float sample) {
 void Distortion::setDrive(float drive) {
     this->drive.store(std::clamp(drive, MIN_DRIVE, MAX_DRIVE));
 }
+
+float Distortion::getDrive() const {
+    return this->drive.load();
+}

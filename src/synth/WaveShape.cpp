@@ -2,9 +2,9 @@
 // Created by Eric El-Chabab on 2026-10-15.
 //
 
-#include "WaveShape.h"
 #include <cmath>
 #include <numbers>
+#include "synth/WaveShape.h"
 
 namespace {
     constexpr float twoPi = 2.0f * std::numbers::pi_v<float>;

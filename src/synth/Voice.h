@@ -6,9 +6,9 @@
 #define SOUNDS_VOICE_H
 
 #include <cstdint>
-#include "Envelope.h"
-#include "Oscillator.h"
-#include "Waveform.h"
+#include "synth/Envelope.h"
+#include "synth/Oscillator.h"
+#include "synth/Waveform.h"
 
 // One playable note: an oscillator (the sound) shaped by an envelope (its volume over time).
 // Call getNextSample() once per sample to get the final output.

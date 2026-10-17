@@ -2,8 +2,8 @@
 // Created by Eric El-Chabab on 2026-10-15.
 //
 
-#include "Synth.h"
-#include "Voice.h"
+#include "synth/Synth.h"
+#include "synth/Voice.h"
 
 Synth::Synth(uint32_t sampleRate) {
     voices.reserve(MAX_VOICES);
@@ -58,11 +58,16 @@ void Synth::noteOff(int note) {
 }
 
 float Synth::getNextSample() {
+    // 1. Mix all the voices
     float sample = 0.0f;
     for (auto& voice : voices) {
         sample += voice->getNextSample();
     }
 
+    // 2. Pass the mix through the effects, once
+    sample = effectChain.process(sample);
+
+    // 3. Apply the master volume
     return sample * masterGain.load();
 }
 
@@ -85,4 +90,8 @@ int Synth::getActiveVoiceCount() const {
         }
     }
     return count;
+}
+
+void Synth::addEffect(std::unique_ptr<Effect> effect) {
+    effectChain.add(std::move(effect));
 }

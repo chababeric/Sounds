@@ -2,8 +2,8 @@
 // Created by Eric El-Chabab on 2026-10-12.
 //
 
-#include "Voice.h"
-#include "Note.h"
+#include "synth/Voice.h"
+#include "synth/Note.h"
 
 namespace {
     constexpr float DEFAULT_AMPLITUDE = 0.5f;

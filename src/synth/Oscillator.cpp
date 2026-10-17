@@ -2,12 +2,12 @@
 // Created by Eric El-Chabab on 2026-10-01.
 //
 
-#include "Oscillator.h"
 #include <cmath>
 #include <numbers>
 #include <cstdint>
 #include <atomic>
 #include <algorithm>
+#include "synth/Oscillator.h"
 
 namespace {
     constexpr float twoPi = 2.0f * std::numbers::pi_v<float>;

@@ -7,8 +7,8 @@
 
 #include <cstdint>
 #include <atomic>
-#include "Waveform.h"
-#include "WaveShape.h"
+#include "synth/Waveform.h"
+#include "synth/WaveShape.h"
 
 class Oscillator {
 public:

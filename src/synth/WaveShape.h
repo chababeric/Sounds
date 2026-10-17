@@ -5,7 +5,7 @@
 #ifndef SOUNDS_WAVESHAPE_H
 #define SOUNDS_WAVESHAPE_H
 
-#include "Waveform.h"
+#include "synth/Waveform.h"
 
 // The shape of one cycle of a wave. Each subclass is one waveform.
 // Shapes have no state: the oscillator keeps track of time, and asks the shape

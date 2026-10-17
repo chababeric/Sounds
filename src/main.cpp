@@ -3,10 +3,12 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <memory>
 
 #include "audio/AudioPlayer.h"
 #include "synth/Synth.h"
 #include "synth/Waveform.h"
+#include "effects/Distortion.h"
 
 // Turns a name typed by the user into a Waveform.
 // Returns std::nullopt if the name doesn't match any waveform.
@@ -56,21 +58,36 @@ std::optional<int> readInt() {
     return std::nullopt;
 }
 
+// Reads a decimal number for a command. Returns std::nullopt if the user typed something else.
+std::optional<float> readFloat() {
+    float value = 0.0f;
+    if (std::cin >> value) {
+        return value;
+    }
+
+    // The read failed (e.g. "d hello"): reset the error state and skip the bad input
+    std::cin.clear();
+    discardRestOfLine();
+    return std::nullopt;
+}
+
 void printHelp() {
     std::cout << "\nCommands:\n"
               << "  on <0-127>  Start a note, e.g. on 60 (middle C)\n"
               << "  off <0-127> Release a note, e.g. off 60\n"
               << "  w <name>    Set waveform for all voices: sine, square, saw, triangle\n"
+              << "  d <1-20>    Set distortion drive, e.g. d 10\n"
               << "  s           Show current settings\n"
               << "  h           Show this help\n"
               << "  q           Quit\n\n"
               << "Try a chord: on 60, on 64, on 67\n\n";
 }
 
-void printStatus(const Synth& synth) {
+void printStatus(const Synth& synth, const Distortion& distortion) {
     std::cout << "Waveform: " << waveformName(synth.getWaveform())
               << ", voices playing: " << synth.getActiveVoiceCount()
-              << " of " << Synth::MAX_VOICES << '\n';
+              << " of " << Synth::MAX_VOICES
+              << ", distortion drive: " << distortion.getDrive() << '\n';
 }
 
 int main() {
@@ -80,10 +97,18 @@ int main() {
     try {
         Synth synth(SAMPLE_RATE);
         AudioPlayer player(synth, SAMPLE_RATE, CHANNEL_COUNT);
+
+        // Create the distortion; main owns it for now
+        auto distortion = std::make_unique<Distortion>(1.0f);
+
+        // Keep a plain pointer to it, to control it later (observing, not owning)
+        Distortion* distortionControl = distortion.get();
+
+        synth.addEffect(std::move(distortion));
         player.start();
 
         std::cout << "=== Tiny Synth ===\n";
-        printStatus(synth);
+        printStatus(synth, *distortionControl);
         printHelp();
 
         std::string command;
@@ -99,7 +124,7 @@ int main() {
                     continue;
                 }
                 synth.noteOn(*note);
-                printStatus(synth);
+                printStatus(synth, *distortionControl);
             }
             else if (command == "off") {
                 const auto note = readInt();
@@ -108,7 +133,7 @@ int main() {
                     continue;
                 }
                 synth.noteOff(*note);
-                printStatus(synth);
+                printStatus(synth, *distortionControl);
             }
             else if (command == "w") {
                 std::string name;
@@ -119,10 +144,19 @@ int main() {
                     continue;
                 }
                 synth.setWaveform(*waveform);
-                printStatus(synth);
+                printStatus(synth, *distortionControl);
+            }
+            else if (command == "d") {
+                const auto drive = readFloat();
+                if (!drive) {
+                    std::cout << "Please type a number from 1 to 20, e.g. d 10\n";
+                    continue;
+                }
+                distortionControl->setDrive(*drive);
+                printStatus(synth, *distortionControl);
             }
             else if (command == "s") {
-                printStatus(synth);
+                printStatus(synth, *distortionControl);
             }
             else if (command == "h") {
                 printHelp();

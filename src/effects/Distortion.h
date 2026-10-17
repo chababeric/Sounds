@@ -6,7 +6,7 @@
 #define SOUNDS_DISTORTION_H
 
 #include <atomic>
-#include "Effect.h"
+#include "effects/Effect.h"
 
 // Distortion by soft clipping: pushes the signal into a tanh curve,
 // which rounds off the loud peaks instead of chopping them flat.
@@ -23,6 +23,8 @@ public:
     // 1 = subtle warmth, around 5 = clearly distorted, 20 = heavy fuzz.
     // Safe to call from any thread while playing.
     void setDrive(float drive);
+
+    float getDrive() const;
 
 private:
     // How hard the signal is pushed into the curve (1 to 20).

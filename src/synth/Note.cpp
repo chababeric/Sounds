@@ -2,9 +2,9 @@
 // Created by Eric El-Chabab on 2026-10-15.
 //
 
-#include "Note.h"
 #include <cmath>
 #include <algorithm>
+#include "synth/Note.h"
 
 namespace {
     constexpr int REFERENCE_NOTE = 69;  // A4

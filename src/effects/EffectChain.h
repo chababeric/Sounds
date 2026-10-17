@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <memory>
-#include "Effect.h"
+#include "effects/Effect.h"
 
 // A series of effects applied one after another, like an assembly line:
 // the output of each effect becomes the input of the next.

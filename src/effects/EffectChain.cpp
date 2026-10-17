@@ -2,7 +2,7 @@
 // Created by Eric El-Chabab on 2026-10-17.
 //
 
-#include "EffectChain.h"
+#include "effects/EffectChain.h"
 
 float EffectChain::process(float sample) {
     for (const auto& effect : effects) {
