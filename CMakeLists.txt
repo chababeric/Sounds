@@ -29,8 +29,12 @@ add_executable(Sounds
         src/audio/miniaudio.cpp
         src/audio/AudioPlayer.cpp
         src/audio/AudioPlayer.h
-        
+
         src/effects/Effect.h
+        src/effects/Distortion.cpp
+        src/effects/Distortion.h
+        src/effects/EffectChain.cpp
+        src/effects/EffectChain.h
 )
 
 target_include_directories(Sounds PRIVATE
