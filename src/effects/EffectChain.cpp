@@ -6,7 +6,9 @@
 
 float EffectChain::process(float sample) {
     for (const auto& effect : effects) {
-        sample = effect->process(sample);
+        if (effect->isEnabled()) {
+            sample = effect->process(sample);
+        }
     }
 
     return sample;

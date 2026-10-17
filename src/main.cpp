@@ -73,21 +73,23 @@ std::optional<float> readFloat() {
 
 void printHelp() {
     std::cout << "\nCommands:\n"
-              << "  on <0-127>  Start a note, e.g. on 60 (middle C)\n"
-              << "  off <0-127> Release a note, e.g. off 60\n"
-              << "  w <name>    Set waveform for all voices: sine, square, saw, triangle\n"
-              << "  d <1-20>    Set distortion drive, e.g. d 10\n"
-              << "  s           Show current settings\n"
-              << "  h           Show this help\n"
-              << "  q           Quit\n\n"
+              << "  on <0-127>     Start a note, e.g. on 60 (middle C)\n"
+              << "  off <0-127>    Release a note, e.g. off 60\n"
+              << "  w <name>       Set waveform for all voices: sine, square, saw, triangle\n"
+              << "  d <1-20>       Set distortion drive, e.g. d 10\n"
+              << "  dist <on/off>  Turn the distortion on or off, e.g. dist off\n"
+              << "  s              Show current settings\n"
+              << "  h              Show this help\n"
+              << "  q              Quit\n\n"
               << "Try a chord: on 60, on 64, on 67\n\n";
 }
 
 void printStatus(const Synth& synth, const Distortion& distortion) {
+    const std::string distortionState = distortion.isEnabled() ? "on" : "off";
     std::cout << "Waveform: " << waveformName(synth.getWaveform())
               << ", voices playing: " << synth.getActiveVoiceCount()
               << " of " << Synth::MAX_VOICES
-              << ", distortion drive: " << distortion.getDrive() << '\n';
+              << ", distortion: " << distortionState << ", drive: " << distortion.getDrive() << '\n';
 }
 
 int main() {
@@ -105,6 +107,7 @@ int main() {
         Distortion* distortionControl = distortion.get();
 
         synth.addEffect(std::move(distortion));
+        distortionControl->setEnabled(false);
         player.start();
 
         std::cout << "=== Tiny Synth ===\n";
@@ -153,6 +156,21 @@ int main() {
                     continue;
                 }
                 distortionControl->setDrive(*drive);
+                printStatus(synth, *distortionControl);
+            }
+            else if (command == "dist") {
+                std::string state;
+                std::cin >> state;
+                if (state == "on") {
+                    distortionControl->setEnabled(true);
+                }
+                else if (state == "off") {
+                    distortionControl->setEnabled(false);
+                }
+                else {
+                    std::cout << "Please type on or off, e.g. dist on\n";
+                    continue;
+                }
                 printStatus(synth, *distortionControl);
             }
             else if (command == "s") {
