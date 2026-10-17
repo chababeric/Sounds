@@ -4,9 +4,9 @@
 #include <optional>
 #include <string>
 
-#include "AudioPlayer.h"
-#include "Synth.h"
-#include "Waveform.h"
+#include "audio/AudioPlayer.h"
+#include "synth/Synth.h"
+#include "synth/Waveform.h"
 
 // Turns a name typed by the user into a Waveform.
 // Returns std::nullopt if the name doesn't match any waveform.

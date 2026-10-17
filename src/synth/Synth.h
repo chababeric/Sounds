@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <atomic>
 #include "Voice.h"
+#include "Waveform.h"
 
 // A polyphonic synthesizer: a fixed pool of voices that can play several notes at once.
 class Synth {

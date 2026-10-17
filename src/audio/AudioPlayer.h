@@ -6,7 +6,7 @@
 #define SOUNDS_AUDIOPLAYER_H
 #include <cstdint>
 #include "miniaudio.h"
-#include "Synth.h"
+#include "../synth/Synth.h"
 
 // Plays an Oscillator live through the default audio output.
 // The sound card calls back into this class whenever it needs more samples.
