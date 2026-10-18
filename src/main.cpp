@@ -9,6 +9,7 @@
 #include "synth/Synth.h"
 #include "synth/Waveform.h"
 #include "effects/Distortion.h"
+#include "effects/Delay.h"
 
 // Turns a name typed by the user into a Waveform.
 // Returns std::nullopt if the name doesn't match any waveform.
@@ -77,19 +78,27 @@ void printHelp() {
               << "  off <0-127>    Release a note, e.g. off 60\n"
               << "  w <name>       Set waveform for all voices: sine, square, saw, triangle\n"
               << "  d <1-20>       Set distortion drive, e.g. d 10\n"
+              << "  dt <seconds>   Set delay time in seconds, e.g. dt 2\n"
+              << "  fb <0-0.95>    Set feedback, e.g. fb 0.4\n"
+              << "  mix <0-1>      Set mix level, e.g. mix 0.3\n"
               << "  dist <on/off>  Turn the distortion on or off, e.g. dist off\n"
+              << "  delay <on/off> Turn the delay on or off, e.g. delay off\n"
               << "  s              Show current settings\n"
               << "  h              Show this help\n"
               << "  q              Quit\n\n"
               << "Try a chord: on 60, on 64, on 67\n\n";
 }
 
-void printStatus(const Synth& synth, const Distortion& distortion) {
-    const std::string distortionState = distortion.isEnabled() ? "on" : "off";
+void printStatus(const Synth& synth, const Distortion& distortion, const Delay& delay) {
     std::cout << "Waveform: " << waveformName(synth.getWaveform())
               << ", voices playing: " << synth.getActiveVoiceCount()
-              << " of " << Synth::MAX_VOICES
-              << ", distortion: " << distortionState << ", drive: " << distortion.getDrive() << '\n';
+              << " of " << Synth::MAX_VOICES << '\n'
+              << "Distortion: " << (distortion.isEnabled() ? "on" : "off")
+              << ", drive " << distortion.getDrive() << '\n'
+              << "Delay: " << (delay.isEnabled() ? "on" : "off")
+              << ", time " << delay.getDelayTime() << " s"
+              << ", feedback " << delay.getFeedback()
+              << ", mix " << delay.getMix() << '\n';
 }
 
 int main() {
@@ -100,18 +109,24 @@ int main() {
         Synth synth(SAMPLE_RATE);
         AudioPlayer player(synth, SAMPLE_RATE, CHANNEL_COUNT);
 
-        // Create the distortion; main owns it for now
+        // Create the distortion and delay; main owns it for now
         auto distortion = std::make_unique<Distortion>(1.0f);
+        auto delay = std::make_unique<Delay>(SAMPLE_RATE, 2.0f);
 
         // Keep a plain pointer to it, to control it later (observing, not owning)
         Distortion* distortionControl = distortion.get();
+        Delay* delayControl = delay.get();
 
         synth.addEffect(std::move(distortion));
+        synth.addEffect(std::move(delay));
+
         distortionControl->setEnabled(false);
+        delayControl->setEnabled(false);
+
         player.start();
 
         std::cout << "=== Tiny Synth ===\n";
-        printStatus(synth, *distortionControl);
+        printStatus(synth, *distortionControl, *delayControl);
         printHelp();
 
         std::string command;
@@ -127,7 +142,7 @@ int main() {
                     continue;
                 }
                 synth.noteOn(*note);
-                printStatus(synth, *distortionControl);
+                printStatus(synth, *distortionControl, *delayControl);
             }
             else if (command == "off") {
                 const auto note = readInt();
@@ -136,7 +151,7 @@ int main() {
                     continue;
                 }
                 synth.noteOff(*note);
-                printStatus(synth, *distortionControl);
+                printStatus(synth, *distortionControl, *delayControl);
             }
             else if (command == "w") {
                 std::string name;
@@ -147,7 +162,7 @@ int main() {
                     continue;
                 }
                 synth.setWaveform(*waveform);
-                printStatus(synth, *distortionControl);
+                printStatus(synth, *distortionControl, *delayControl);
             }
             else if (command == "d") {
                 const auto drive = readFloat();
@@ -156,7 +171,34 @@ int main() {
                     continue;
                 }
                 distortionControl->setDrive(*drive);
-                printStatus(synth, *distortionControl);
+                printStatus(synth, *distortionControl, *delayControl);
+            }
+            else if (command == "dt") {
+                const auto delayTime = readFloat();
+                if (!delayTime) {
+                    std::cout << "Please type a time in seconds, from 0 to 2, e.g. dt 0.4\n";
+                    continue;
+                }
+                delayControl->setDelayTime(*delayTime);
+                printStatus(synth, *distortionControl, *delayControl);
+            }
+            else if (command == "fb") {
+                const auto feedback = readFloat();
+                if (!feedback) {
+                    std::cout << "Please type a number from 0 to 0.95, e.g. fb 0.4\n";
+                    continue;
+                }
+                delayControl->setFeedback(*feedback);
+                printStatus(synth, *distortionControl, *delayControl);
+            }
+            else if (command == "mix") {
+                const auto mixLevel = readFloat();
+                if (!mixLevel) {
+                    std::cout << "Please type a number from 0 to 1, e.g. mix 0.3\n";
+                    continue;
+                }
+                delayControl->setMix(*mixLevel);
+                printStatus(synth, *distortionControl, *delayControl);
             }
             else if (command == "dist") {
                 std::string state;
@@ -171,10 +213,25 @@ int main() {
                     std::cout << "Please type on or off, e.g. dist on\n";
                     continue;
                 }
-                printStatus(synth, *distortionControl);
+                printStatus(synth, *distortionControl, *delayControl);
+            }
+            else if (command == "delay") {
+                std::string state;
+                std::cin >> state;
+                if (state == "on") {
+                    delayControl->setEnabled(true);
+                }
+                else if (state == "off") {
+                    delayControl->setEnabled(false);
+                }
+                else {
+                    std::cout << "Please type on or off, e.g. delay on\n";
+                    continue;
+                }
+                printStatus(synth, *distortionControl, *delayControl);
             }
             else if (command == "s") {
-                printStatus(synth, *distortionControl);
+                printStatus(synth, *distortionControl, *delayControl);
             }
             else if (command == "h") {
                 printHelp();

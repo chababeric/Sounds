@@ -35,6 +35,8 @@ add_executable(Sounds
         src/effects/Distortion.h
         src/effects/EffectChain.cpp
         src/effects/EffectChain.h
+        src/effects/Delay.cpp
+        src/effects/Delay.h
 )
 
 target_include_directories(Sounds PRIVATE
