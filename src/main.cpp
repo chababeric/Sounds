@@ -15,6 +15,7 @@
 #include "audio/AudioBuffer.h"
 #include "audio/WavReader.h"
 #include "audio/WavWriter.h"
+#include "sampler/SamplePlayer.h"
 
 // Turns a name typed by the user into a Waveform.
 // Returns std::nullopt if the name doesn't match any waveform.
@@ -91,6 +92,8 @@ void printHelp() {
               << "  delay <on/off>  Turn the delay on or off, e.g. delay off\n"
               << "  filter <on/off> Turn the filter on or off, e.g. filter off\n"
               << "  test            Write a WAV file, read it back and compare\n"
+              << "  play            Play the loaded sample (roundtrip_test.wav)\n"
+              << "  speed <0.25-4>  Sample playback speed, e.g. speed 2 (one octave up)\n"
               << "  s               Show current settings\n"
               << "  h               Show this help\n"
               << "  q               Quit\n\n"
@@ -191,6 +194,18 @@ int main() {
         distortionControl->setEnabled(false);
         delayControl->setEnabled(false);
         lowPassFilterControl->setEnabled(false);
+
+        // Load the sample; the synth still works without one
+        SamplePlayer* samplePlayerControl = nullptr;
+
+        if (auto loaded = WavReader::readWav("roundtrip_test.wav")) {
+            auto samplePlayer = std::make_unique<SamplePlayer>(std::move(*loaded));
+            samplePlayerControl = samplePlayer.get();
+            synth.setSamplePlayer(std::move(samplePlayer));
+        }
+        else {
+            std::cout << "No sample loaded: roundtrip_test.wav not found. Type 'test', then restart.\n";
+        }
 
         player.start();
 
@@ -325,6 +340,25 @@ int main() {
             }
             else if (command == "test") {
                 runWavRoundTripTest(SAMPLE_RATE);
+            }
+            else if (command == "play") {
+                if (samplePlayerControl == nullptr) {
+                    std::cout << "No sample loaded\n";
+                    continue;
+                }
+                samplePlayerControl->trigger();
+            }
+            else if (command == "speed") {
+                const auto speedValue = readFloat();
+                if (!speedValue) {
+                    std::cout << "Please type a speed, from 0.25 to 4, e.g. speed 2\n";
+                    continue;
+                }
+                if (samplePlayerControl == nullptr) {
+                    std::cout << "No sample loaded\n";
+                    continue;
+                }
+                samplePlayerControl->setSpeed(*speedValue);
             }
             else if (command == "s") {
                 printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);

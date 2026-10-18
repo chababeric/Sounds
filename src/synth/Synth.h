@@ -13,6 +13,7 @@
 #include "synth/Waveform.h"
 #include "effects/EffectChain.h"
 #include "effects/Effect.h"
+#include "sampler/SamplePlayer.h"
 
 // A polyphonic synthesizer: a fixed pool of voices that can play several notes at once.
 class Synth {
@@ -29,7 +30,8 @@ public:
     // Releases the voice holding this note, if any.
     void noteOff(int note);
 
-    // The mix of all voices for one sample. Must be called exactly once per sample.
+    // The mix of all voices and the sample player for one sample, through the effects.
+    // Must be called exactly once per sample.
     float getNextSample();
 
     // Shape of the wave for every voice: sine, square, saw or triangle.
@@ -42,6 +44,12 @@ public:
     // Adds an effect to the end of the effect chain, which takes ownership of it.
     // Setup only: call before playback starts.
     void addEffect(std::unique_ptr<Effect> effect);
+
+    // Gives the synth a sample player, mixed in with the voices before the effects.
+    // The synth takes ownership; keep a plain pointer to call trigger() later.
+    // Setup only: NOT thread-safe, call before playback starts
+    // (replacing it while the audio thread uses it would delete it under its feet).
+    void setSamplePlayer(std::unique_ptr<SamplePlayer> samplePlayer);
 
 private:
     // Volume of the whole mix, applied after summing the voices. Keeps chords from clipping.
@@ -62,6 +70,9 @@ private:
 
     // The effects applied to the mix of all voices, before the master gain.
     EffectChain effectChain;
+
+    // Optional one-shot sample player. nullptr until setSamplePlayer is called.
+    std::unique_ptr<SamplePlayer> samplePlayer;
 };
 
 #endif //SOUNDS_SYNTH_H

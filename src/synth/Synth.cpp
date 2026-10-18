@@ -58,10 +58,14 @@ void Synth::noteOff(int note) {
 }
 
 float Synth::getNextSample() {
-    // 1. Mix all the voices
+    // 1. Mix all the voices and the sample player
     float sample = 0.0f;
     for (auto& voice : voices) {
         sample += voice->getNextSample();
+    }
+
+    if (samplePlayer) {
+        sample += samplePlayer->getNextSample();
     }
 
     // 2. Pass the mix through the effects, once
@@ -94,4 +98,8 @@ int Synth::getActiveVoiceCount() const {
 
 void Synth::addEffect(std::unique_ptr<Effect> effect) {
     effectChain.add(std::move(effect));
+}
+
+void Synth::setSamplePlayer(std::unique_ptr<SamplePlayer> samplePlayer) {
+    this->samplePlayer = std::move(samplePlayer);
 }

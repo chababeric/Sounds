@@ -29,6 +29,8 @@ add_executable(Sounds
         src/audio/miniaudio.cpp
         src/audio/AudioPlayer.cpp
         src/audio/AudioPlayer.h
+        src/audio/WavReader.cpp
+        src/audio/WavReader.h
 
         src/effects/Effect.h
         src/effects/Distortion.cpp
@@ -39,8 +41,9 @@ add_executable(Sounds
         src/effects/Delay.h
         src/effects/LowPassFilter.cpp
         src/effects/LowPassFilter.h
-        src/audio/WavReader.cpp
-        src/audio/WavReader.h
+
+        src/sampler/SamplePlayer.cpp
+        src/sampler/SamplePlayer.h
 )
 
 target_include_directories(Sounds PRIVATE
