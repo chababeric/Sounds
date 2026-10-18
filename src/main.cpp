@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <memory>
+#include <cmath>
 
 #include "audio/AudioPlayer.h"
 #include "synth/Synth.h"
@@ -11,6 +12,9 @@
 #include "effects/Distortion.h"
 #include "effects/Delay.h"
 #include "effects/LowPassFilter.h"
+#include "audio/AudioBuffer.h"
+#include "audio/WavReader.h"
+#include "audio/WavWriter.h"
 
 // Turns a name typed by the user into a Waveform.
 // Returns std::nullopt if the name doesn't match any waveform.
@@ -86,6 +90,7 @@ void printHelp() {
               << "  dist <on/off>   Turn the distortion on or off, e.g. dist off\n"
               << "  delay <on/off>  Turn the delay on or off, e.g. delay off\n"
               << "  filter <on/off> Turn the filter on or off, e.g. filter off\n"
+              << "  test            Write a WAV file, read it back and compare\n"
               << "  s               Show current settings\n"
               << "  h               Show this help\n"
               << "  q               Quit\n\n"
@@ -105,6 +110,60 @@ void printStatus(const Synth& synth, const Distortion& distortion,
               << ", mix " << delay.getMix() << '\n'
               << "Filter: " << (filter.isEnabled() ? "on" : "off")
               << ", cutoff " << filter.getCutoff() << " Hz\n";
+}
+
+// Renders 1 second of A4 to a WAV file, reads it back with WavReader,
+// and checks that the audio survived the trip. Returns true if it did.
+bool runWavRoundTripTest(uint32_t sampleRate) {
+    const std::string fileName = "roundtrip_test.wav";
+    constexpr int TEST_NOTE = 69;                       // A4, 440 Hz
+    constexpr float TOLERANCE = 1.0f / 32767.0f;        // one 16-bit step
+
+    // A separate synth, not the live one: the audio thread owns that one
+    Synth renderSynth(sampleRate);
+    renderSynth.noteOn(TEST_NOTE);
+
+    AudioBuffer original(sampleRate, 1);                // mono
+    for (uint32_t i = 0; i < sampleRate; i++) {         // 1 second
+        original.addSample(renderSynth.getNextSample());
+    }
+
+    if (!WavWriter::writeWav(original, fileName)) {
+        std::cout << "Round trip FAILED: could not write " << fileName << '\n';
+        return false;
+    }
+
+    const auto loaded = WavReader::readWav(fileName);
+    if (!loaded) {
+        std::cout << "Round trip FAILED: could not read " << fileName << '\n';
+        return false;
+    }
+
+    // Header values must match exactly
+    if (loaded->getSampleRate() != original.getSampleRate() ||
+        loaded->getChannelCount() != original.getChannelCount() ||
+        loaded->getSamples().size() != original.getSamples().size()) {
+        std::cout << "Round trip FAILED: format mismatch\n"
+                  << "  sample rate " << original.getSampleRate() << " -> " << loaded->getSampleRate() << '\n'
+                  << "  channels    " << original.getChannelCount() << " -> " << loaded->getChannelCount() << '\n'
+                  << "  samples     " << original.getSamples().size() << " -> " << loaded->getSamples().size() << '\n';
+        return false;
+    }
+
+    // Samples only need to be close: 16-bit rounding loses a tiny bit of precision
+    const auto& before = original.getSamples();
+    const auto& after = loaded->getSamples();
+    for (size_t i = 0; i < before.size(); i++) {
+        if (std::abs(before[i] - after[i]) > TOLERANCE) {
+            std::cout << "Round trip FAILED at sample " << i
+                      << ": " << before[i] << " -> " << after[i] << '\n';
+            return false;
+        }
+    }
+
+    std::cout << "Round trip OK: " << after.size() << " samples, "
+              << loaded->getDuration() << " s, written to " << fileName << '\n';
+    return true;
 }
 
 int main() {
@@ -263,6 +322,9 @@ int main() {
                     continue;
                 }
                 printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
+            }
+            else if (command == "test") {
+                runWavRoundTripTest(SAMPLE_RATE);
             }
             else if (command == "s") {
                 printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);

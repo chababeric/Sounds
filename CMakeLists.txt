@@ -39,6 +39,8 @@ add_executable(Sounds
         src/effects/Delay.h
         src/effects/LowPassFilter.cpp
         src/effects/LowPassFilter.h
+        src/audio/WavReader.cpp
+        src/audio/WavReader.h
 )
 
 target_include_directories(Sounds PRIVATE

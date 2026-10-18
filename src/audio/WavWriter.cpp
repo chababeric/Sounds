@@ -9,6 +9,14 @@
 #include <cmath>
 #include <cstdint>
 
+namespace {
+    template <typename T>
+    void writeValue(std::ofstream& file, T value) {
+        const auto bytes = reinterpret_cast<const char*>(&value);
+        file.write(bytes, sizeof(value));
+    }
+}
+
 bool WavWriter::writeWav(const AudioBuffer& buffer, const std::string& fileName) {
     std::ofstream file(fileName, std::ios::binary);
 
@@ -21,27 +29,12 @@ bool WavWriter::writeWav(const AudioBuffer& buffer, const std::string& fileName)
     writeHeader(file, buffer);
 
     for (float sample : buffer.getSamples()) {
-        writeInt16(file, floatToPcm16(sample));
+        writeValue(file, floatToPcm16(sample));
     }
 
     // Close first so any buffered data is written to disk, then check for errors
     file.close();
     return !file.fail();
-}
-
-void WavWriter::writeInt16(std::ofstream &file, int16_t value) {
-    const auto bytes = reinterpret_cast<const char*>(&value);
-    file.write(bytes, sizeof(value));
-}
-
-void WavWriter::writeUInt16(std::ofstream &file, uint16_t value) {
-    const auto bytes = reinterpret_cast<const char*>(&value);
-    file.write(bytes, sizeof(value));
-}
-
-void WavWriter::writeUInt32(std::ofstream& file, uint32_t value) {
-    const auto bytes = reinterpret_cast<const char*>(&value);
-    file.write(bytes, sizeof(value));
 }
 
 int16_t WavWriter::floatToPcm16(float value) {
@@ -93,21 +86,21 @@ void WavWriter::writeHeader(std::ofstream& file, const AudioBuffer& buffer) {
     const uint32_t byteRate = buffer.getSampleRate() * blockAlign;
 
     // --- RIFF section ---
-    file.write("RIFF", 4);                         // File type marker
-    writeUInt32(file, 36 + dataSize);              // Rest of file: 44-byte header - 8 (this tag + this field) + data
-    file.write("WAVE", 4);                         // RIFF contents are audio
+    file.write("RIFF", 4);                            // File type marker
+    writeValue(file, 36 + dataSize);              // Rest of file: 44-byte header - 8 (this tag + this field) + data
+    file.write("WAVE", 4);                            // RIFF contents are audio
 
     // --- Format section ---
-    file.write("fmt ", 4);                         // Start of format section
-    writeUInt32(file, FORMAT_CHUNK_SIZE);          // Format section is 16 bytes
-    writeUInt16(file, AUDIO_FORMAT_PCM);           // Uncompressed PCM
-    writeUInt16(file, buffer.getChannelCount());   // Mono or stereo
-    writeUInt32(file, buffer.getSampleRate());     // Frames per second
-    writeUInt32(file, byteRate);                   // Bytes per second
-    writeUInt16(file, blockAlign);                 // Bytes per frame
-    writeUInt16(file, BITS_PER_SAMPLE);            // Bit depth
+    file.write("fmt ", 4);                            // Start of format section
+    writeValue(file, FORMAT_CHUNK_SIZE);               // Format section is 16 bytes
+    writeValue(file, AUDIO_FORMAT_PCM);                // Uncompressed PCM
+    writeValue(file, buffer.getChannelCount());   // Mono or stereo
+    writeValue(file, buffer.getSampleRate());     // Frames per second
+    writeValue(file, byteRate);                        // Bytes per second
+    writeValue(file, blockAlign);                      // Bytes per frame
+    writeValue(file, BITS_PER_SAMPLE);                 // Bit depth
 
     // --- Data section ---
-    file.write("data", 4);                         // Start of data section
-    writeUInt32(file, dataSize);                   // Bytes of samples that follow
+    file.write("data", 4);                            // Start of data section
+    writeValue(file, dataSize);                        // Bytes of samples that follow
 }

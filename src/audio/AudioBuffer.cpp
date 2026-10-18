@@ -2,9 +2,9 @@
 // Created by Eric El-Chabab on 2026-10-01.
 //
 
-#include "AudioBuffer.h"
 #include <vector>
 #include <utility>
+#include "audio/AudioBuffer.h"
 
 
 AudioBuffer::AudioBuffer(uint32_t sampleRate, uint16_t channelCount, std::vector<float> samples)

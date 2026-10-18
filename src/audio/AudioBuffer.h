@@ -4,6 +4,7 @@
 
 #ifndef SOUNDS_AUDIOBUFFER_H
 #define SOUNDS_AUDIOBUFFER_H
+
 #include <cstdint>
 #include <vector>
 
