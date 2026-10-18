@@ -10,6 +10,7 @@
 #include "synth/Waveform.h"
 #include "effects/Distortion.h"
 #include "effects/Delay.h"
+#include "effects/LowPassFilter.h"
 
 // Turns a name typed by the user into a Waveform.
 // Returns std::nullopt if the name doesn't match any waveform.
@@ -74,22 +75,25 @@ std::optional<float> readFloat() {
 
 void printHelp() {
     std::cout << "\nCommands:\n"
-              << "  on <0-127>     Start a note, e.g. on 60 (middle C)\n"
-              << "  off <0-127>    Release a note, e.g. off 60\n"
-              << "  w <name>       Set waveform for all voices: sine, square, saw, triangle\n"
-              << "  d <1-20>       Set distortion drive, e.g. d 10\n"
-              << "  dt <seconds>   Set delay time in seconds, e.g. dt 2\n"
-              << "  fb <0-0.95>    Set feedback, e.g. fb 0.4\n"
-              << "  mix <0-1>      Set mix level, e.g. mix 0.3\n"
-              << "  dist <on/off>  Turn the distortion on or off, e.g. dist off\n"
-              << "  delay <on/off> Turn the delay on or off, e.g. delay off\n"
-              << "  s              Show current settings\n"
-              << "  h              Show this help\n"
-              << "  q              Quit\n\n"
+              << "  on <0-127>      Start a note, e.g. on 60 (middle C)\n"
+              << "  off <0-127>     Release a note, e.g. off 60\n"
+              << "  w <name>        Set waveform for all voices: sine, square, saw, triangle\n"
+              << "  d <1-20>        Set distortion drive, e.g. d 10\n"
+              << "  dt <seconds>    Set delay time in seconds, e.g. dt 0.4\n"
+              << "  fb <0-0.95>     Set feedback, e.g. fb 0.4\n"
+              << "  mix <0-1>       Set mix level, e.g. mix 0.3\n"
+              << "  lp <hz>         Set filter cutoff in Hz, e.g. lp 1500\n"
+              << "  dist <on/off>   Turn the distortion on or off, e.g. dist off\n"
+              << "  delay <on/off>  Turn the delay on or off, e.g. delay off\n"
+              << "  filter <on/off> Turn the filter on or off, e.g. filter off\n"
+              << "  s               Show current settings\n"
+              << "  h               Show this help\n"
+              << "  q               Quit\n\n"
               << "Try a chord: on 60, on 64, on 67\n\n";
 }
 
-void printStatus(const Synth& synth, const Distortion& distortion, const Delay& delay) {
+void printStatus(const Synth& synth, const Distortion& distortion,
+                 const Delay& delay, const LowPassFilter& filter) {
     std::cout << "Waveform: " << waveformName(synth.getWaveform())
               << ", voices playing: " << synth.getActiveVoiceCount()
               << " of " << Synth::MAX_VOICES << '\n'
@@ -98,7 +102,9 @@ void printStatus(const Synth& synth, const Distortion& distortion, const Delay& 
               << "Delay: " << (delay.isEnabled() ? "on" : "off")
               << ", time " << delay.getDelayTime() << " s"
               << ", feedback " << delay.getFeedback()
-              << ", mix " << delay.getMix() << '\n';
+              << ", mix " << delay.getMix() << '\n'
+              << "Filter: " << (filter.isEnabled() ? "on" : "off")
+              << ", cutoff " << filter.getCutoff() << " Hz\n";
 }
 
 int main() {
@@ -109,24 +115,28 @@ int main() {
         Synth synth(SAMPLE_RATE);
         AudioPlayer player(synth, SAMPLE_RATE, CHANNEL_COUNT);
 
-        // Create the distortion and delay; main owns it for now
+        // Create the distortion, delay and low pass filter; main owns them for now
         auto distortion = std::make_unique<Distortion>(1.0f);
         auto delay = std::make_unique<Delay>(SAMPLE_RATE, 2.0f);
+        auto lowPassFilter = std::make_unique<LowPassFilter>(SAMPLE_RATE, 20000.0f);
 
         // Keep a plain pointer to it, to control it later (observing, not owning)
         Distortion* distortionControl = distortion.get();
         Delay* delayControl = delay.get();
+        LowPassFilter* lowPassFilterControl = lowPassFilter.get();
 
         synth.addEffect(std::move(distortion));
         synth.addEffect(std::move(delay));
+        synth.addEffect(std::move(lowPassFilter));
 
         distortionControl->setEnabled(false);
         delayControl->setEnabled(false);
+        lowPassFilterControl->setEnabled(false);
 
         player.start();
 
         std::cout << "=== Tiny Synth ===\n";
-        printStatus(synth, *distortionControl, *delayControl);
+        printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
         printHelp();
 
         std::string command;
@@ -142,7 +152,7 @@ int main() {
                     continue;
                 }
                 synth.noteOn(*note);
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "off") {
                 const auto note = readInt();
@@ -151,7 +161,7 @@ int main() {
                     continue;
                 }
                 synth.noteOff(*note);
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "w") {
                 std::string name;
@@ -162,7 +172,7 @@ int main() {
                     continue;
                 }
                 synth.setWaveform(*waveform);
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "d") {
                 const auto drive = readFloat();
@@ -171,7 +181,7 @@ int main() {
                     continue;
                 }
                 distortionControl->setDrive(*drive);
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "dt") {
                 const auto delayTime = readFloat();
@@ -180,7 +190,7 @@ int main() {
                     continue;
                 }
                 delayControl->setDelayTime(*delayTime);
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "fb") {
                 const auto feedback = readFloat();
@@ -189,7 +199,7 @@ int main() {
                     continue;
                 }
                 delayControl->setFeedback(*feedback);
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "mix") {
                 const auto mixLevel = readFloat();
@@ -198,7 +208,16 @@ int main() {
                     continue;
                 }
                 delayControl->setMix(*mixLevel);
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
+            }
+            else if (command == "lp") {
+                const auto lowPassFilterFrequency = readFloat();
+                if (!lowPassFilterFrequency) {
+                    std::cout << "Please type a frequency in Hz, from 20 to 22050, e.g. lp 1500\n";
+                    continue;
+                }
+                lowPassFilterControl->setCutoff(*lowPassFilterFrequency);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "dist") {
                 std::string state;
@@ -213,7 +232,7 @@ int main() {
                     std::cout << "Please type on or off, e.g. dist on\n";
                     continue;
                 }
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "delay") {
                 std::string state;
@@ -228,10 +247,25 @@ int main() {
                     std::cout << "Please type on or off, e.g. delay on\n";
                     continue;
                 }
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
+            }
+            else if (command == "filter") {
+                std::string state;
+                std::cin >> state;
+                if (state == "on") {
+                    lowPassFilterControl->setEnabled(true);
+                }
+                else if (state == "off") {
+                    lowPassFilterControl->setEnabled(false);
+                }
+                else {
+                    std::cout << "Please type on or off, e.g. filter on\n";
+                    continue;
+                }
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "s") {
-                printStatus(synth, *distortionControl, *delayControl);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "h") {
                 printHelp();

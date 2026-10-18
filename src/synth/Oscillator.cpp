@@ -51,6 +51,7 @@ void Oscillator::setFrequency(float frequency) {
 }
 
 void Oscillator::setWaveform(Waveform waveform) {
+    this->waveform.store(waveform);
     shape.store(&WaveShape::shapeFor(waveform));
 }
 

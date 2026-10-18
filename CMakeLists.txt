@@ -37,6 +37,8 @@ add_executable(Sounds
         src/effects/EffectChain.h
         src/effects/Delay.cpp
         src/effects/Delay.h
+        src/effects/LowPassFilter.cpp
+        src/effects/LowPassFilter.h
 )
 
 target_include_directories(Sounds PRIVATE
