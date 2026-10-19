@@ -88,6 +88,9 @@ void printHelp() {
               << "  fb <0-0.95>     Set feedback, e.g. fb 0.4\n"
               << "  mix <0-1>       Set mix level, e.g. mix 0.3\n"
               << "  lp <hz>         Set filter cutoff in Hz, e.g. lp 1500\n"
+              << "  pn <0-127>      Play the sample at a note, e.g. pn 81 (one octave up)\n"
+              << "  loop <on/off>   Turn sample looping on or off, e.g. loop on\n"
+              << "  stop            Stop the sample\n"
               << "  dist <on/off>   Turn the distortion on or off, e.g. dist off\n"
               << "  delay <on/off>  Turn the delay on or off, e.g. delay off\n"
               << "  filter <on/off> Turn the filter on or off, e.g. filter off\n"
@@ -291,6 +294,55 @@ int main() {
                     continue;
                 }
                 lowPassFilterControl->setCutoff(*lowPassFilterFrequency);
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
+            }
+            else if (command == "pn") {
+                const auto note = readInt();
+                if (!note) {
+                    std::cout << "Please type a note number, e.g. pn 69\n";
+                    continue;
+                }
+                if (samplePlayerControl == nullptr) {
+                    std::cout << "No sample loaded\n";
+                    continue;
+                }
+
+                constexpr int ROOT_NOTE = 69;    // the sample is an A4: at note 69 it plays at normal speed
+
+                const float semitones = static_cast<float>(*note) - ROOT_NOTE;     // how many semitones away from the root
+                const float speed = std::pow(2.0f, semitones / 12.0f);         // 2 to the power of (semitones / 12)
+
+                samplePlayerControl->setSpeed(speed);
+                samplePlayerControl->trigger();
+            }
+            else if (command == "loop") {
+                std::string state;
+                std::cin >> state;
+
+                if (samplePlayerControl == nullptr) {
+                    std::cout << "No sample loaded\n";
+                    continue;
+                }
+
+                if (state == "on") {
+                    samplePlayerControl->setLooping(true);
+                }
+                else if (state == "off") {
+                    samplePlayerControl->setLooping(false);
+                }
+                else {
+                    std::cout << "Please type on or off, e.g. loop on\n";
+                    continue;
+                }
+                printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
+            }
+            else if (command == "stop") {
+                if (samplePlayerControl == nullptr) {
+                    std::cout << "No sample loaded\n";
+                    continue;
+                }
+
+                samplePlayerControl->stop();
                 printStatus(synth, *distortionControl, *delayControl, *lowPassFilterControl);
             }
             else if (command == "dist") {

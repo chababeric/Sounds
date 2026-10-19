@@ -9,11 +9,11 @@
 #include <atomic>
 #include "audio/AudioBuffer.h"
 
-// Plays a loaded AudioBuffer once from start to end (a "one-shot" sample).
+// Plays a loaded AudioBuffer from start to end, once or looping.
 // Multichannel files are mixed down to mono (channels averaged).
 //
-// Threading: trigger() and isPlaying() can be called from the main thread;
-// getNextSample() is called by the audio thread only.
+// Threading: trigger(), stop(), setSpeed(), setLooping() and isPlaying() can be
+// called from the main thread; getNextSample() is called by the audio thread only.
 class SamplePlayer {
 public:
     // Takes the audio by value and moves it in, so the caller can std::move a buffer without copying.
@@ -33,7 +33,17 @@ public:
     // Clamped to 0.25..4 (two octaves down to two up). Safe to call from the main thread.
     void setSpeed(float speed);
 
+    // When on, the sample restarts from the beginning instead of stopping at the end.
+    // Safe to call from the main thread, even while playing.
+    void setLooping(bool looping);
+
+    // Asks the audio thread to stop playing. Only raises a flag, like trigger().
+    void stop();
+
 private:
+    // The mono value of one frame: all its channels averaged.
+    float readFrame(size_t frame) const;
+
     // The audio being played. Never changes after construction.
     AudioBuffer sample;
 
@@ -51,6 +61,12 @@ private:
 
     // Playback speed. Set by the main thread, read by the audio thread.
     std::atomic<float> speed{1.0f};
+
+    // Loop mode. Set by the main thread, read by the audio thread.
+    std::atomic<bool> looping{false};
+
+    // Set by stop() on the main thread, taken by getNextSample() on the audio thread.
+    std::atomic<bool> stopRequested{false};
 };
 
 
