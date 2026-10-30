@@ -26,6 +26,10 @@ const std::vector<float>& AudioBuffer::getSamples() const {
     return samples;
 }
 
+std::vector<float>& AudioBuffer::getSamples() {
+    return samples;
+}
+
 uint32_t AudioBuffer::getSampleRate() const {
     return sampleRate;
 }

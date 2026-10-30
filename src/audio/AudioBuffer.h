@@ -17,6 +17,9 @@ public:
     uint16_t getChannelCount() const;
     float getDuration() const;
     const std::vector<float>& getSamples() const;
+
+    // Read-write access, for code that edits the audio (e.g. Edits::reverse).
+    std::vector<float>& getSamples();
     uint32_t getSampleRate() const;
 
 private:
