@@ -11,6 +11,10 @@
 namespace Edits {
     // Reverses the audio in time. Works frame by frame, so stereo channels stay on their side.
     void reverse(AudioBuffer& buffer);
+
+    // Scales the audio so its loudest sample reaches targetPeak (1.0 = full scale).
+    // Does nothing on silent or empty buffers.
+    void normalize(AudioBuffer& buffer, float targetPeak);
 }
 
 #endif //SOUNDS_EDITS_H

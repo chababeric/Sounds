@@ -94,6 +94,9 @@ add_executable(editor
         src/editor/main.cpp
         src/editor/Edits.cpp
         src/editor/Edits.h
+        src/editor/EditCommand.h
+        src/editor/ReverseCommand.cpp
+        src/editor/ReverseCommand.h
 )
 target_include_directories(editor PRIVATE src)
 target_link_libraries(editor PRIVATE imgui sound_core)

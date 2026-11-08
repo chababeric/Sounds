@@ -4,6 +4,8 @@
 
 #include <utility>
 #include <vector>
+#include <cmath>
+#include <algorithm>
 #include "editor/Edits.h"
 
 void Edits::reverse(AudioBuffer& buffer) {
@@ -19,7 +21,22 @@ void Edits::reverse(AudioBuffer& buffer) {
         // Swap the two frames channel by channel, so L stays L and R stays R
         for (uint16_t c = 0; c < channelCount; c++) {
             std::swap(samples[frontFrame * channelCount + c],
-                      samples[backFrame * channelCount + c]);
+                      samples[backFrame * channelCount + c]
+            );
         }
+    }
+}
+
+void Edits::normalize(AudioBuffer& buffer, float targetPeak) {
+    std::vector<float>& samples = buffer.getSamples();
+    if (samples.empty()) return;
+
+    const auto loudest = std::ranges::max_element(samples, {}, [](float x) { return std::abs(x); });
+    const float peak = std::abs(*loudest);
+    if (peak == 0.0f) return;    // silence: nothing to scale (and avoids dividing by zero)
+
+    const float gain = targetPeak / peak;
+    for (float& sample : samples) {
+        sample *= gain;
     }
 }
