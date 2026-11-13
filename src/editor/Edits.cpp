@@ -29,11 +29,11 @@ void Edits::reverse(AudioBuffer& buffer) {
 
 float Edits::normalize(AudioBuffer& buffer, float targetPeak) {
     std::vector<float>& samples = buffer.getSamples();
-    if (samples.empty()) return 1.0f;
+    if (samples.empty()) { return 1.0f; }
 
     const auto loudest = std::ranges::max_element(samples, {}, [](float x) { return std::abs(x); });
     const float peak = std::abs(*loudest);
-    if (peak == 0.0f) return 1.0f;    // silence: nothing to scale (and avoids dividing by zero)
+    if (peak == 0.0f) { return 1.0f; }    // silence: nothing to scale (and avoids dividing by zero)
 
     const float gain = targetPeak / peak;
     applyGain(buffer, gain);
@@ -46,5 +46,24 @@ void Edits::applyGain(AudioBuffer &buffer, float gain) {
 
     for (float& sample : samples) {
         sample *= gain;
+    }
+}
+
+void Edits::fadeIn(AudioBuffer& buffer, size_t fadeFrames) {
+    std::vector<float>& samples = buffer.getSamples();
+    const uint16_t channelCount = buffer.getChannelCount();
+    const size_t frameCount = samples.size() / channelCount;
+
+    fadeFrames = std::min(fadeFrames, frameCount);    // never longer than the file
+    if (fadeFrames == 0) return;                      // nothing to fade (and avoids dividing by 0)
+
+    for (size_t i = 0; i < fadeFrames; i++) {
+        // Rises from 0 (silent) at the first frame toward 1 (full volume) at the end of the fade
+        const float gain = static_cast<float>(i) / static_cast<float>(fadeFrames);
+
+        // Same gain for every channel of this frame
+        for (uint16_t c = 0; c < channelCount; c++) {
+            samples[i * channelCount + c] *= gain;
+        }
     }
 }

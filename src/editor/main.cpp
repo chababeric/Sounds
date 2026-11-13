@@ -6,21 +6,22 @@
 //
 
 #include <GLFW/glfw3.h>
+#include <memory>
 #include <optional>
 #include <string>
-#include <vector>
 #include <utility>
-#include <memory>
+#include <vector>
 
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include "editor/ReverseCommand.h"
-#include "editor/NormalizeCommand.h"
+#include "FadeInCommand.h"
 #include "audio/AudioBuffer.h"
 #include "audio/WavReader.h"
 #include "audio/WavWriter.h"
 #include "editor/EditCommand.h"
+#include "editor/NormalizeCommand.h"
+#include "editor/ReverseCommand.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 int main() {
     // 1. Open a window with an OpenGL 3.2 context (the version macOS supports)
@@ -119,6 +120,12 @@ int main() {
             ImGui::SameLine();
             if (ImGui::Button("Normalize")) {
                 applyEdit(std::make_unique<NormalizeCommand>(0.9f));
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Fade In")) {
+                constexpr float FADE_SECONDS = 0.5f;
+                const auto fadeFrames = static_cast<size_t>(FADE_SECONDS * static_cast<float>(buffer->getSampleRate()));
+                applyEdit(std::make_unique<FadeInCommand>(fadeFrames));
             }
             ImGui::SameLine();
 

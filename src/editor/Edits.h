@@ -6,6 +6,7 @@
 #define SOUNDS_EDITS_H
 
 #include "audio/AudioBuffer.h"
+#include <cstddef>
 
 // Operations that modify an AudioBuffer in place.
 // Used by the edit commands; they don't record anything for Undo themselves.
@@ -20,6 +21,10 @@ namespace Edits {
 
     // Multiplies every sample by gain: above 1 = louder, below 1 = quieter.
     void applyGain(AudioBuffer& buffer, float gain);
-}
+
+    // Fades the first fadeFrames frames in, from silence to full volume (linear ramp).
+    // A fade longer than the file fades the whole file.
+    void fadeIn(AudioBuffer& buffer, size_t fadeFrames);
+} // namespace Edits
 
 #endif //SOUNDS_EDITS_H
