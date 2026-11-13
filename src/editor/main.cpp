@@ -16,10 +16,10 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "editor/ReverseCommand.h"
+#include "editor/NormalizeCommand.h"
 #include "audio/AudioBuffer.h"
 #include "audio/WavReader.h"
 #include "audio/WavWriter.h"
-#include "editor/Edits.h"
 #include "editor/EditCommand.h"
 
 int main() {
@@ -118,7 +118,7 @@ int main() {
             }
             ImGui::SameLine();
             if (ImGui::Button("Normalize")) {
-                applyEdit(std::make_unique<ReverseCommand>());
+                applyEdit(std::make_unique<NormalizeCommand>(0.9f));
             }
             ImGui::SameLine();
 

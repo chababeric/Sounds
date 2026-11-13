@@ -27,15 +27,23 @@ void Edits::reverse(AudioBuffer& buffer) {
     }
 }
 
-void Edits::normalize(AudioBuffer& buffer, float targetPeak) {
+float Edits::normalize(AudioBuffer& buffer, float targetPeak) {
     std::vector<float>& samples = buffer.getSamples();
-    if (samples.empty()) return;
+    if (samples.empty()) return 1.0f;
 
     const auto loudest = std::ranges::max_element(samples, {}, [](float x) { return std::abs(x); });
     const float peak = std::abs(*loudest);
-    if (peak == 0.0f) return;    // silence: nothing to scale (and avoids dividing by zero)
+    if (peak == 0.0f) return 1.0f;    // silence: nothing to scale (and avoids dividing by zero)
 
     const float gain = targetPeak / peak;
+    applyGain(buffer, gain);
+
+    return gain;
+}
+
+void Edits::applyGain(AudioBuffer &buffer, float gain) {
+    std::vector<float>& samples = buffer.getSamples();
+
     for (float& sample : samples) {
         sample *= gain;
     }
